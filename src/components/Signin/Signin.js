@@ -18,7 +18,7 @@ class Signin extends React.Component {
     this.setState({signInPassword: event.target.value})
   }
 
-  saveAuthTokenInSession = (token) => {
+  saveAuthTokenInSessions = (token) => {
     window.sessionStorage.setItem('token', token);
   }
 
@@ -33,12 +33,13 @@ class Signin extends React.Component {
     })
       .then(response => response.json())
       .then(data => {
-        if (data.userId && data.success == 'true') {
-          this.saveAuthTokenInSession(data.token)
-          this.props.loadUser(data)
+        if (data && data.success === "true") {
+          this.saveAuthTokenInSessions(data.token)
+          this.props.loadUser(data.user)
           this.props.onRouteChange('home');
         }
       })
+      .catch(console.log)
   }
 
   render() {
@@ -58,7 +59,7 @@ class Signin extends React.Component {
                   id="email-address"
                   onChange={this.onEmailChange}
                 />
-              </div>w
+              </div>
               <div className="mv3">
                 <label className="db fw6 lh-copy f6" htmlFor="password">Password</label>
                 <input

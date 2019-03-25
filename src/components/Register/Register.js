@@ -6,7 +6,9 @@ class Register extends React.Component {
     this.state = {
       email: '',
       password: '',
-      name: ''
+      name: '',
+      age: '',
+      pet: ''
     }
   }
 
@@ -22,6 +24,14 @@ class Register extends React.Component {
     this.setState({password: event.target.value})
   }
 
+  onAgeChange = (event) => {
+    this.setState({age: event.target.value})
+  }
+
+  onPetChange = (event) => {
+    this.setState({pet: event.target.value})
+  }
+
   onSubmitSignIn = () => {
     fetch('http://localhost:3000/register', {
       method: 'post',
@@ -29,7 +39,9 @@ class Register extends React.Component {
       body: JSON.stringify({
         email: this.state.email,
         password: this.state.password,
-        name: this.state.name
+        name: this.state.name,
+        age: this.state.age,
+        pet: this.state.pet
       })
     })
       .then(response => response.json())
@@ -66,6 +78,26 @@ class Register extends React.Component {
                   name="email-address"
                   id="email-address"
                   onChange={this.onEmailChange}
+                />
+              </div>
+              <div className="mt3">
+                <label className="db fw6 lh-copy f6" htmlFor="age">Age</label>
+                <input
+                  className="pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100"
+                  type="number"
+                  name="age"
+                  id="age"
+                  onChange={this.onAgeChange}
+                />
+              </div>
+              <div className="mt3">
+                <label className="db fw6 lh-copy f6" htmlFor="pet">Pet</label>
+                <input
+                  className="pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100"
+                  type="text"
+                  name="pet"
+                  id="pet"
+                  onChange={this.onPetChange}
                 />
               </div>
               <div className="mv3">

@@ -1,3 +1,4 @@
+
 import React, { Component } from 'react';
 import Particles from 'react-particles-js';
 import FaceRecognition from './components/FaceRecognition/FaceRecognition';
@@ -7,8 +8,8 @@ import Register from './components/Register/Register';
 import Logo from './components/Logo/Logo';
 import ImageLinkForm from './components/ImageLinkForm/ImageLinkForm';
 import Rank from './components/Rank/Rank';
-import Modal from './components/Modal/Modal';
 import Profile from './components/Profile/Profile';
+import Modal from './components/Modal/Modal';
 import './App.css';
 
 const particlesOptions = {
@@ -27,15 +28,17 @@ const initialState = {
   input: '',
   imageUrl: '',
   boxes: [],
-  route: 'login',
-  isSignedIn: false,
+  route: 'signin',
   isProfileOpen: false,
+  isSignedIn: false,
   user: {
     id: '',
     name: '',
     email: '',
     entries: 0,
-    joined: ''
+    joined: '',
+    age: 0,
+    pet: ''
   }
 }
 
@@ -45,23 +48,36 @@ class App extends Component {
     this.state = initialState;
   }
 
-  ComponentDidMount() {
-    const token = window.sessionStorage.setItem('token', token);
+  componentDidMount() {
+    const token = window.sessionStorage.getItem('token');
     if (token) {
       fetch('http://localhost:3000/signin', {
-        method: 'post',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': token
         }
       })
-      .then(resp => resp.json())
-      .then(data => {
-        if (data && data.id) {
-          console.log('success we need to get user profile');
-        }
-      })
-      .catch(console.log)
+        .then(response => response.json())
+        .then(data => {
+          if (data && data.id) {
+            fetch(`http://localhost:3000/profile/${data.id}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token
+              }
+            })
+            .then(response => response.json())
+            .then(user => {
+              if (user && user.email) {
+                this.loadUser(user)
+                this.onRouteChange('home');
+              }
+            })
+          }
+        })
+        .catch(console.log)
     }
   }
 
@@ -70,17 +86,19 @@ class App extends Component {
       id: data.id,
       name: data.name,
       email: data.email,
+      age: data.age,
+      pet: data.pet,
       entries: data.entries,
       joined: data.joined
     }})
   }
 
-  calculateFaceLocations = (data) => {
+  calculateFaceLocation = (data) => {
+    const image = document.getElementById('inputimage');
+    const width = Number(image.width);
+    const height = Number(image.height);
     return data.outputs[0].data.regions.map(face => {
       const clarifaiFace = face.region_info.bounding_box;
-      const image = document.getElementById('inputimage');
-      const width = Number(image.width);
-      const height = Number(image.height);
       return {
         leftCol: clarifaiFace.left_col * width,
         topRow: clarifaiFace.top_row * height,
@@ -88,10 +106,9 @@ class App extends Component {
         bottomRow: height - (clarifaiFace.bottom_row * height)
       }
     });
-
   }
 
-  displayFaceBoxes = (boxes) => {
+  displayFaceBox = (boxes) => {
     this.setState({boxes: boxes});
   }
 
@@ -103,7 +120,10 @@ class App extends Component {
     this.setState({imageUrl: this.state.input});
       fetch('http://localhost:3000/imageurl', {
         method: 'post',
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': window.sessionStorage.getItem('token')
+        },
         body: JSON.stringify({
           input: this.state.input
         })
@@ -113,7 +133,10 @@ class App extends Component {
         if (response) {
           fetch('http://localhost:3000/image', {
             method: 'put',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': window.sessionStorage.getItem('token')
+            },
             body: JSON.stringify({
               id: this.state.user.id
             })
@@ -125,7 +148,7 @@ class App extends Component {
             .catch(console.log)
 
         }
-        this.displayFaceBoxes(this.calculateFaceLocations(response))
+        this.displayFaceBox(this.calculateFaceLocation(response))
       })
       .catch(err => console.log(err));
   }
@@ -140,27 +163,24 @@ class App extends Component {
   }
 
   toggleModal = () => {
-    this.setState(prevState => ({
-      ...prevState,
-      isProfileOpen: !prevState.isProfileOpen
-    }))
+    this.setState(state => ({
+      ...state,
+      isProfileOpen: !state.isProfileOpen,
+    }));
   }
 
   render() {
     const { isSignedIn, imageUrl, route, boxes, isProfileOpen, user } = this.state;
     return (
       <div className="App">
-         <Particles className='particles'
+        <Particles className='particles'
           params={particlesOptions}
         />
         <Navigation isSignedIn={isSignedIn} onRouteChange={this.onRouteChange} toggleModal={this.toggleModal}/>
-        { isProfileOpen &&
+        {
+          isProfileOpen &&
           <Modal>
-            <Profile
-            isProfileOpen={isProfileOpen}
-            toggleModal={this.toggleModal}
-            loadUser={this.loadUser}
-            user={user}/>
+            <Profile isProfileOpen={isProfileOpen} toggleModal={this.toggleModal} user={user} loadUser={this.loadUser} />
           </Modal>
         }
         { route === 'home'
